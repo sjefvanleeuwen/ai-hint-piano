@@ -48,9 +48,10 @@ footer{margin-top:18px;color:#64777f;font:10px 'DM Mono';display:flex;justify-co
 <section class="info"><div class="tile"><strong>01 / KEY MOTION</strong>Keys sink on note-on and return on note-off, making each gesture readable.</div><div class="tile"><strong>02 / HAND BLOCKS</strong>Simple palm and finger forms track the notes assigned to each hand.</div><div class="tile"><strong>03 / CAMERA STUDY</strong>Choose a slow orbit, hand follow, key sweep, or fixed view while the piece plays.</div></section>
 <footer><span>DEMO SEQUENCE IS ORIGINAL · UPLOAD A MIDI TO REPLACE IT</span><span>MOUSE DRAG TO ORBIT · SCROLL TO ZOOM</span></footer>
 </main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/"}}</script>
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/controls/OrbitControls.js';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const mount=document.querySelector('#scene');
 const scene=new THREE.Scene(); scene.background=new THREE.Color('#101b22'); scene.fog=new THREE.Fog('#101b22',18,42);
 const camera=new THREE.PerspectiveCamera(38,1,.1,100); camera.position.set(1.5,8.8,13.8);
@@ -68,11 +69,11 @@ box(piano,13.35,.12,2.42,mat('#263b43',.28,.2),0,-.19,.08);
 box(piano,13.2,.18,.12,mat('#6cddc6',.25,.25),0,-.12,1.13);
 const keyGroup=new THREE.Group();piano.add(keyGroup);
 const N=52,kw=12.9/N,kd=1.72,kY=-.075,kZ=.23,whiteMat=mat('#edf1e8',.26),blackMat=mat('#182329',.25,.18),pressedMat=mat('#a1f1ce',.23);
-const whiteNotes=[0,2,4,5,7,9,11],blackAfter=[-1,0,1,-1,0,1,2];let whiteIndex=0;
-const keys=[];
-for(let n=0;n<N;n++){const sem=n%7;const key=box(keyGroup,kw*.96,.16,kd,whiteMat,-6.45+kw*(n+.5),kY,kZ);key.userData={midi:48+n,white:true,baseY:kY,vel:0};keys.push(key)}
+const whiteMidi=[];for(let midi=21;midi<=108;midi++)if([0,2,4,5,7,9,11].includes(midi%12))whiteMidi.push(midi);
+const keys=[],keyXByMidi=new Map();
+for(let n=0;n<N;n++){const midi=whiteMidi[n],x=-6.45+kw*(n+.5),key=box(keyGroup,kw*.96,.16,kd,whiteMat,x,kY,kZ);key.userData={midi,white:true,baseY:kY,vel:0};keys.push(key);keyXByMidi.set(midi,x)}
 const blackKeys=[];
-for(let octave=0;octave<8;octave++){for(const [offset,after] of [[0,0],[1,1],[3,3],[4,4],[5,5]]){const note=octave*7+offset;if(note>=N-1)continue;const x=-6.45+kw*(note+1);const b=box(keyGroup,kw*.58,.22,.93,blackMat,x,kY+.105,-.18);b.userData={midi:48+note+1,white:false,baseY:kY+.105,vel:0};blackKeys.push(b);keys.push(b)}}
+for(let n=0;n<whiteMidi.length-1;n++){const lower=whiteMidi[n],upper=whiteMidi[n+1];if(upper-lower!==2)continue;const midi=lower+1,x=-6.45+kw*(n+1),b=box(keyGroup,kw*.58,.22,.93,blackMat,x,kY+.105,-.18);b.userData={midi,white:false,baseY:kY+.105,vel:0};blackKeys.push(b);keys.push(b);keyXByMidi.set(midi,x)}
 const back=box(piano,13.2,.12,.2,mat('#32474d',.3,.2),0,-.2,-1.12);back.position.y=-.2;
 const hands=[];
 for(let i=0;i<2;i++){const g=new THREE.Group();scene.add(g);const skin=mat(i?'#d6a47d':'#e3b28b',.64);const sleeve=mat(i?'#536e82':'#826b96',.58);const palm=box(g,1.02,.23,.56,skin,0,0,0);const cuff=box(g,1.17,.28,.38,sleeve,0,.02,.48);const fingers=[];for(let f=0;f<5;f++){const finger=box(g,.145,.14,.56,skin,(f-2)*.19,-.015,-.43);fingers.push(finger)}g.userData={palm,fingers};hands.push(g)}
@@ -102,7 +103,7 @@ function resize(){const r=mount.getBoundingClientRect();renderer.setSize(r.width
 function animate(now){requestAnimationFrame(animate);const dt=Math.min(.05,(now-lastNow)/1000||0);lastNow=now;camT+=dt;if(playing){pausedAt=(now-startAt)/1000*speed;if(pausedAt>=duration){pausedAt=duration;playing=false;document.querySelector('#play').innerHTML='▶&nbsp; Play'}}
 const t=pausedAt;let active=events.filter(e=>t>=e.start&&t<e.end),note=active[active.length-1];document.querySelector('#noteName').textContent=note?noteLabel(note.midi):'—';document.querySelector('#elapsed').textContent=fmt(t);document.querySelector('#bar').style.width=(t/duration*100)+'%';
 for(const k of keys){const ev=active.find(e=>e.midi===k.userData.midi);const target=ev?-.12*(.45+ev.velocity/127):0;k.position.y+=(k.userData.baseY+target-k.position.y)*.28;k.material=ev?pressedMat:(k.userData.white?whiteMat:blackMat)}
-for(let h=0;h<2;h++){const subset=active.filter(e=>h===0?e.midi<66:e.midi>=66);if(subset.length){const avg=subset.reduce((s,e)=>s+e.midi,0)/subset.length;const x=(avg-73.5)*kw;const z=.72;hands[h].position.lerp(new THREE.Vector3(x,.19,z),.22);hands[h].rotation.z+=(h===0?-.025:.025)-hands[h].rotation.z*.12;hands[h].visible=true}else{hands[h].position.y+=(.62-hands[h].position.y)*.08;hands[h].visible=true}}
+for(let h=0;h<2;h++){const subset=active.filter(e=>h===0?e.midi<66:e.midi>=66);if(subset.length){const avg=subset.reduce((s,e)=>s+e.midi,0)/subset.length;const x=subset.reduce((sum,e)=>sum+(keyXByMidi.get(e.midi)||0),0)/subset.length;const z=.72;hands[h].position.lerp(new THREE.Vector3(x,.19,z),.22);hands[h].rotation.z+=(h===0?-.025:.025)-hands[h].rotation.z*.12;hands[h].visible=true}else{hands[h].position.y+=(.62-hands[h].position.y)*.08;hands[h].visible=true}}
 const mode=document.querySelector('#camera').value;if(mode==='orbit'&&!controls._pointerActive){camera.position.x=1.5+Math.sin(camT*.12)*2.7;camera.position.z=13.8+Math.cos(camT*.12)*1.1;camera.lookAt(0,0,0)}if(mode==='hands'&&!controls._pointerActive){camera.position.x=Math.sin(camT*.13)*1.7;camera.lookAt(0,.1,.1)}if(mode==='keys'&&!controls._pointerActive){camera.position.x=-9+Math.sin(camT*.09)*2;camera.lookAt(0,0,0)}
 controls.update();renderer.render(scene,camera)}requestAnimationFrame(animate);
 </script>
