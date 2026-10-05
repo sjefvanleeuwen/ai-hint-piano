@@ -28,7 +28,7 @@ h1{font-size:clamp(28px,4vw,48px);line-height:1.04;letter-spacing:-.045em;margin
 select,input[type=file]{color:#e8f0ef;font:12px Manrope;background:transparent;border:0;outline:0;width:100%;cursor:pointer}
 input[type=file]::file-selector-button{border:0;border-radius:5px;background:#24353c;color:#cceadd;padding:6px 9px;margin-right:9px;font:10px 'DM Mono';cursor:pointer}
 input[type=range]{width:100%;accent-color:var(--mint)}
-.buttons{display:flex;gap:8px}.btn{border:1px solid #456059;background:#a0f1ce;color:#0a1712;font:700 12px Manrope;border-radius:9px;padding:0 20px;height:56px;cursor:pointer;transition:.2s}.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}.btn.secondary{background:#18252c;border-color:#344851;color:#dae7e5}
+.buttons{display:flex;gap:8px}.btn{border:1px solid #456059;background:#a0f1ce;color:#0a1712;font:700 12px Manrope;border-radius:9px;padding:0 20px;height:56px;cursor:pointer;transition:.2s}.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}.btn.secondary{background:#18252c;border-color:#344851;color:#dae7e5}.btn.active{background:#9cf2cf;border-color:#9cf2cf;color:#0a1712}
 .info{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px}.tile{padding:14px 16px;border:1px solid #ffffff12;border-radius:10px;background:#10181c;color:#95a8ae;font-size:11px;line-height:1.5}.tile strong{display:block;color:#ecf4f1;font:11px 'DM Mono';letter-spacing:.08em;margin-bottom:5px}
 footer{margin-top:18px;color:#64777f;font:10px 'DM Mono';display:flex;justify-content:space-between;gap:14px}
 @media(max-width:800px){.intro{display:block}.badge{display:inline-block;margin-top:16px}.controls{grid-template-columns:1fr 1fr}.buttons .btn{flex:1}.buttons{grid-column:1/-1}.stage{height:62vw;min-height:330px}.info{grid-template-columns:1fr}footer{display:block}footer span{display:block;margin-top:7px}}
@@ -43,7 +43,7 @@ footer{margin-top:18px;color:#64777f;font:10px 'DM Mono';display:flex;justify-co
 <div class="control"><label>Performance file</label><input id="file" type="file" accept=".mid,.midi,audio/midi"></div>
 <div class="control"><label>Camera path</label><select id="camera"><option value="orbit">Slow orbit</option><option value="hands">Hand follow</option><option value="keys">Along the keys</option><option value="fixed">Fixed stage</option></select></div>
 <div class="control"><label>Playback speed · <span id="speedText">1.0×</span></label><input id="speed" type="range" min=".5" max="1.5" value="1" step=".1"></div>
-<div class="buttons"><button class="btn" id="play">▶&nbsp; Play</button><button class="btn secondary" id="reset">↺</button></div>
+<div class="buttons"><button class="btn secondary" id="closeup" title="Follow the playing hands and keys">◎ Close-up</button><button class="btn" id="play">▶&nbsp; Play</button><button class="btn secondary" id="reset">↺</button></div>
 </section>
 <section class="info"><div class="tile"><strong>01 / KEY MOTION</strong>Keys sink on note-on and return on note-off, making each gesture readable.</div><div class="tile"><strong>02 / HAND BLOCKS</strong>Simple palm and finger forms track the notes assigned to each hand.</div><div class="tile"><strong>03 / CAMERA STUDY</strong>Choose a slow orbit, hand follow, key sweep, or fixed view while the piece plays.</div></section>
 <footer><span>DEMO SEQUENCE IS ORIGINAL · UPLOAD A MIDI TO REPLACE IT</span><span>MOUSE DRAG TO ORBIT · SCROLL TO ZOOM</span></footer>
@@ -79,7 +79,7 @@ const back=box(piano,13.2,.12,.2,mat('#32474d',.3,.2),0,-.2,-1.12);back.position
 const hands=[];
 for(let i=0;i<2;i++){const g=new THREE.Group();scene.add(g);const skin=mat(i?'#d6a47d':'#e3b28b',.64);const sleeve=mat(i?'#536e82':'#826b96',.58);const palm=box(g,1.02,.23,.56,skin,0,0,0);const cuff=box(g,1.17,.28,.38,sleeve,0,.02,.48);const fingers=[];for(let f=0;f<5;f++){const finger=box(g,.145,.14,.56,skin,(f-2)*.19,-.015,-.43);fingers.push(finger)}g.userData={palm,fingers};hands.push(g)}
 const glow=new THREE.PointLight(0x68e9ce,0,4);scene.add(glow);
-let events=[],duration=0,playing=false,startAt=0,pausedAt=0,lastNow=0,speed=1,camT=0;
+let events=[],duration=0,playing=false,startAt=0,pausedAt=0,lastNow=0,speed=1,camT=0,closeFocusX=0;
 const keyByMidi=new Map(keys.map(k=>[k.userData.midi,k]));
 const noteNames=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 const noteLabel=n=>noteNames[n%12]+(Math.floor(n/12)-1);
@@ -99,13 +99,16 @@ document.querySelector('#file').addEventListener('change',async e=>{const f=e.ta
 document.querySelector('#speed').addEventListener('input',e=>{speed=+e.target.value;document.querySelector('#speedText').textContent=speed.toFixed(1)+'×'});
 document.querySelector('#play').addEventListener('click',()=>{if(playing){pausedAt=(performance.now()-startAt)/1000*speed;playing=false;document.querySelector('#play').innerHTML='▶&nbsp; Play'}else{if(pausedAt>=duration)pausedAt=0;startAt=performance.now()-pausedAt/speed*1000;playing=true;document.querySelector('#play').innerHTML='Ⅱ&nbsp; Pause'}});
 document.querySelector('#reset').addEventListener('click',()=>{playing=false;pausedAt=0;document.querySelector('#play').innerHTML='▶&nbsp; Play'});
-document.querySelector('#camera').addEventListener('change',()=>{const mode=document.querySelector('#camera').value;if(mode==='hands'){camera.position.set(0,5.8,8);controls.target.set(0,.1,0)}if(mode==='keys'){camera.position.set(-9,4.6,7);controls.target.set(0,0,0)}if(mode==='fixed'){camera.position.set(1.5,8.8,13.8);controls.target.set(0,0,0)}});
+const cameraSelect=document.querySelector('#camera'),closeupButton=document.querySelector('#closeup');
+function setCameraMode(mode){cameraSelect.value=mode;closeupButton.classList.toggle('active',mode==='closeup');if(mode==='hands'){camera.position.set(0,5.8,8);controls.target.set(0,.1,0)}if(mode==='keys'){camera.position.set(-9,4.6,7);controls.target.set(0,0,0)}if(mode==='fixed'||mode==='orbit'){camera.position.set(1.5,8.8,13.8);controls.target.set(0,0,0)}if(mode==='closeup'){camera.position.set(closeFocusX,3.4,5.6);controls.target.set(closeFocusX,-.03,.15)}}
+cameraSelect.addEventListener('change',()=>setCameraMode(cameraSelect.value));
+closeupButton.addEventListener('click',()=>setCameraMode(cameraSelect.value==='closeup'?'orbit':'closeup'));
 function resize(){const r=mount.getBoundingClientRect();renderer.setSize(r.width,r.height);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(mount);resize();
 function animate(now){requestAnimationFrame(animate);const dt=Math.min(.05,(now-lastNow)/1000||0);lastNow=now;camT+=dt;if(playing){pausedAt=(now-startAt)/1000*speed;if(pausedAt>=duration){pausedAt=duration;playing=false;document.querySelector('#play').innerHTML='▶&nbsp; Play'}}
 const t=pausedAt;let active=events.filter(e=>t>=e.start&&t<e.end),note=active[active.length-1];document.querySelector('#noteName').textContent=note?noteLabel(note.midi):'—';document.querySelector('#elapsed').textContent=fmt(t);document.querySelector('#bar').style.width=(t/duration*100)+'%';
 for(const k of keys){const ev=active.find(e=>e.midi===k.userData.midi);const target=ev?-.12*(.45+ev.velocity/127):0;k.position.y+=(k.userData.baseY+target-k.position.y)*.28;k.material=ev?pressedMat:(k.userData.white?whiteMat:blackMat)}
 for(let h=0;h<2;h++){const subset=active.filter(e=>h===0?e.midi<66:e.midi>=66);if(subset.length){const avg=subset.reduce((s,e)=>s+e.midi,0)/subset.length;const x=subset.reduce((sum,e)=>sum+(keyXByMidi.get(e.midi)||0),0)/subset.length;const z=.72;hands[h].position.lerp(new THREE.Vector3(x,.19,z),.22);hands[h].rotation.z+=(h===0?-.025:.025)-hands[h].rotation.z*.12;hands[h].visible=true}else{hands[h].position.y+=(.62-hands[h].position.y)*.08;hands[h].visible=true}}
-const mode=document.querySelector('#camera').value;if(mode==='orbit'&&!controls._pointerActive){camera.position.x=1.5+Math.sin(camT*.12)*2.7;camera.position.z=13.8+Math.cos(camT*.12)*1.1;camera.lookAt(0,0,0)}if(mode==='hands'&&!controls._pointerActive){camera.position.x=Math.sin(camT*.13)*1.7;camera.lookAt(0,.1,.1)}if(mode==='keys'&&!controls._pointerActive){camera.position.x=-9+Math.sin(camT*.09)*2;camera.lookAt(0,0,0)}
+const mode=document.querySelector('#camera').value;if(mode==='orbit'&&!controls._pointerActive){camera.position.x=1.5+Math.sin(camT*.12)*2.7;camera.position.z=13.8+Math.cos(camT*.12)*1.1;camera.lookAt(0,0,0)}if(mode==='hands'&&!controls._pointerActive){camera.position.x=Math.sin(camT*.13)*1.7;camera.lookAt(0,.1,.1)}if(mode==='keys'&&!controls._pointerActive){camera.position.x=-9+Math.sin(camT*.09)*2;camera.lookAt(0,0,0)}if(mode==='closeup'&&!controls._pointerActive){if(active.length){const wanted=active.reduce((sum,e)=>sum+(keyXByMidi.get(e.midi)||0),0)/active.length;closeFocusX+=(wanted-closeFocusX)*.08}camera.position.lerp(new THREE.Vector3(closeFocusX,3.4,5.6),.055);controls.target.lerp(new THREE.Vector3(closeFocusX,-.03,.15),.08)}
 controls.update();renderer.render(scene,camera)}requestAnimationFrame(animate);
 </script>
 </body>
