@@ -55,7 +55,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 const mount=document.querySelector('#scene');
 const scene=new THREE.Scene(); scene.background=new THREE.Color('#101b22'); scene.fog=new THREE.Fog('#101b22',18,42);
 const camera=new THREE.PerspectiveCamera(38,1,.1,100); camera.position.set(1.5,8.8,13.8);
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.25; mount.appendChild(renderer.domElement);
+function makeCanvasFallback(){
+ const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+ return {domElement:canvas,setPixelRatio(){},setSize(w,h){const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);canvas.style.width=w+'px';canvas.style.height=h+'px';ctx.setTransform(dpr,0,0,dpr,0,0)},render(){drawCanvasFallback(ctx,canvas.clientWidth,canvas.clientHeight)}};
+}
+let renderer;
+try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25}
+catch(error){console.warn('WebGL unavailable; using the 2D piano view.',error);renderer=makeCanvasFallback();mount.dataset.renderer='canvas-fallback'}
+mount.appendChild(renderer.domElement);
 const controls=new OrbitControls(camera,renderer.domElement); controls.target.set(0,0,0);controls.enableDamping=true;controls.dampingFactor=.055;controls.minDistance=8;controls.maxDistance=24;controls.maxPolarAngle=Math.PI*.48;
 scene.add(new THREE.HemisphereLight(0xc9f3ff,0x182129,2.1));
 const keyLight=new THREE.DirectionalLight(0xfff4dd,3.2);keyLight.position.set(-4,10,7);keyLight.castShadow=true;keyLight.shadow.mapSize.set(2048,2048);scene.add(keyLight);
@@ -99,6 +106,19 @@ document.querySelector('#speed').addEventListener('input',e=>{speed=+e.target.va
 document.querySelector('#play').addEventListener('click',()=>{if(playing){pausedAt=(performance.now()-startAt)/1000*speed;playing=false;document.querySelector('#play').innerHTML='▶&nbsp; Play'}else{if(pausedAt>=duration)pausedAt=0;startAt=performance.now()-pausedAt/speed*1000;playing=true;document.querySelector('#play').innerHTML='Ⅱ&nbsp; Pause'}});
 document.querySelector('#reset').addEventListener('click',()=>{playing=false;pausedAt=0;document.querySelector('#play').innerHTML='▶&nbsp; Play'});
 document.querySelector('#camera').addEventListener('change',()=>{const mode=document.querySelector('#camera').value;if(mode==='hands'){camera.position.set(0,5.8,8);controls.target.set(0,.1,0)}if(mode==='keys'){camera.position.set(-9,4.6,7);controls.target.set(0,0,0)}if(mode==='fixed'){camera.position.set(1.5,8.8,13.8);controls.target.set(0,0,0)}});
+function drawCanvasFallback(ctx,w,h){
+ if(!w||!h)return;
+ ctx.clearRect(0,0,w,h);
+ const bg=ctx.createLinearGradient(0,0,w,h);bg.addColorStop(0,'#18303a');bg.addColorStop(1,'#0b1319');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+ const halo=ctx.createRadialGradient(w*.55,h*.48,4,w*.55,h*.48,w*.6);halo.addColorStop(0,'#32525a55');halo.addColorStop(1,'#0d171c00');ctx.fillStyle=halo;ctx.fillRect(0,0,w,h);
+ const boardW=w*.88,left=(w-boardW)/2,unit=boardW/52,backY=h*.39,frontY=h*.75,blackH=(frontY-backY)*.62;
+ ctx.fillStyle='#1c2a31';ctx.beginPath();ctx.roundRect(left-12,backY-16,boardW+24,frontY-backY+h*.15,10);ctx.fill();ctx.fillStyle='#68ddc6';ctx.fillRect(left-8,backY-4,boardW+16,4);
+ const active=events.filter(e=>pausedAt>=e.start&&pausedAt<e.end),activeMidi=new Set(active.map(e=>e.midi));
+ for(let n=0;n<whiteMidi.length;n++){const midi=whiteMidi[n],x=left+n*unit,pressed=activeMidi.has(midi);ctx.fillStyle=pressed?'#9cf2cf':'#e8eee8';ctx.beginPath();ctx.moveTo(x+1,backY);ctx.lineTo(x+unit-1,backY);ctx.lineTo(x+unit*.96,frontY);ctx.lineTo(x+unit*.04,frontY);ctx.closePath();ctx.fill();ctx.fillStyle=pressed?'#65c9a2':'#c4d0cc';ctx.fillRect(x+unit*.06,frontY-2,unit*.88,h*.055);ctx.strokeStyle='#7c8a88';ctx.lineWidth=.7;ctx.stroke()}
+ for(let n=0;n<whiteMidi.length-1;n++){const lo=whiteMidi[n],hi=whiteMidi[n+1];if(hi-lo!==2)continue;const midi=lo+1,x=left+(n+1)*unit-unit*.31;ctx.fillStyle=activeMidi.has(midi)?'#54b993':'#111a20';ctx.beginPath();ctx.roundRect(x,backY-1,unit*.62,blackH,2);ctx.fill();ctx.fillStyle='#314149';ctx.fillRect(x+2,backY+blackH-5,unit*.62-4,4)}
+ for(let hnd=0;hnd<2;hnd++){const subset=active.filter(e=>hnd===0?e.midi<66:e.midi>=66);const midiX=subset.length?subset.reduce((sum,e)=>sum+(keyXByMidi.get(e.midi)||0),0)/subset.length: (hnd===0?-2.2:2.2);const x=left+boardW*(midiX/12.9+.5),y=backY-32;ctx.fillStyle=hnd===0?'#826b96':'#536e82';ctx.beginPath();ctx.roundRect(x-unit*2.4,y-12,unit*4.8,18,6);ctx.fill();ctx.fillStyle=hnd===0?'#e3b28b':'#d6a47d';ctx.beginPath();ctx.roundRect(x-unit*2,y-3,unit*4,20,8);ctx.fill();for(let f=0;f<5;f++){const fx=x+(f-2)*unit*.74;ctx.beginPath();ctx.roundRect(fx-unit*.27,y+9,unit*.54,Math.max(16,h*.09),unit*.25);ctx.fill()}}
+ ctx.fillStyle='#9cf2cf';ctx.font='10px monospace';ctx.fillText('WEBGL FALLBACK · MIDI MOTION VIEW',left,24);
+}
 function resize(){const r=mount.getBoundingClientRect();renderer.setSize(r.width,r.height);camera.aspect=r.width/r.height;camera.updateProjectionMatrix()}new ResizeObserver(resize).observe(mount);resize();
 function animate(now){requestAnimationFrame(animate);const dt=Math.min(.05,(now-lastNow)/1000||0);lastNow=now;camT+=dt;if(playing){pausedAt=(now-startAt)/1000*speed;if(pausedAt>=duration){pausedAt=duration;playing=false;document.querySelector('#play').innerHTML='▶&nbsp; Play'}}
 const t=pausedAt;let active=events.filter(e=>t>=e.start&&t<e.end),note=active[active.length-1];document.querySelector('#noteName').textContent=note?noteLabel(note.midi):'—';document.querySelector('#elapsed').textContent=fmt(t);document.querySelector('#bar').style.width=(t/duration*100)+'%';
