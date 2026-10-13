@@ -48,13 +48,14 @@ footer{margin-top:18px;color:#64777f;font:10px 'DM Mono';display:flex;justify-co
 <div class="buttons"><button class="btn secondary" id="closeup" title="Follow the playing hands and keys">◎ Key detail</button><button class="btn" id="play">▶&nbsp; Play</button><button class="btn secondary" id="audioToggle" aria-pressed="true">♫ Audio On</button><button class="btn secondary" id="reset" title="Reset playback">↺</button></div>
 </section>
 <section class="capture-controls"><label>Reference clip <select id="clipLength"><option value="5">5 seconds</option><option value="10" selected>10 seconds</option><option value="20">20 seconds</option><option value="30">30 seconds</option></select></label><button class="btn secondary" id="record">● Record 1080p reference</button><button class="btn secondary" id="clean">Hide overlays</button><button class="btn secondary" id="snapshot">Save matching frame</button><span id="captureStatus" role="status">Fixed camera · 1× speed · clean 16:9 frame</span></section><section class="info"><div class="tile"><strong>01 / KEY MOTION</strong>Keys sink on note-on and return on note-off, making each gesture readable.</div><div class="tile"><strong>02 / ARTICULATED PIANIST</strong>A seated mannequin connects shoulders, elbows, wrists, and three-segment fingers. Fingering is estimated from MIDI.</div><div class="tile"><strong>03 / CAMERA STUDY</strong>Use a steady three-quarter shot for transfer; separate front, side, overhead, and key-detail views for inspection.</div></section>
-<footer><span>PIANO SAMPLES: <a href="https://github.com/sfzinstruments/SalamanderGrandPiano" target="_blank" rel="noreferrer">SALAMANDER GRAND PIANO BY ALEXANDER HOLM</a> · <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">CC BY 3.0</a></span><span>MIDI FINGERING IS ESTIMATED · DRAG TO FRAME · RECORDING LOCKS CAMERA · WEBM OUTPUT</span></footer>
+<footer><span>PIANO SAMPLES: <a href="https://github.com/sfzinstruments/SalamanderGrandPiano" target="_blank" rel="noreferrer">SALAMANDER GRAND PIANO BY ALEXANDER HOLM</a> · <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">CC BY 3.0</a></span><span>MIDI FINGERING IS ESTIMATED · DRAG TO FRAME · RECORDING LOCKS CAMERA · MP4 PREFERRED · WEBM FALLBACK</span></footer>
 </main>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/","tone":"https://cdn.jsdelivr.net/npm/tone@15.1.22/+esm"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import * as Tone from 'tone';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import {createReferenceRecorder,preferredRecordingType,recordingExtension} from './recording.mjs';
 import {parseMidi} from './midi.mjs';
 import {planFingering} from './motion.mjs';
 import {createPianist} from './pianist.mjs';
@@ -136,7 +137,7 @@ if(mode==='hands'){const wanted=(handStates[0].x+handStates[1].x)/2;closeFocusX+
 }
 controls.update();renderer.render(scene,camera);if(recording&&recorder?.state==='recording'&&(t>=recordEnd||!playing))recorder.stop()}requestAnimationFrame(animate);
 
-let recorder=null,recordEnd=0,captureAudio=null;
+let recorder=null,recordEnd=0,captureAudio=null,captureStream=null;
 const recordButton=document.querySelector('#record'),captureStatus=document.querySelector('#captureStatus'),stage=document.querySelector('.stage');
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000)}
 document.querySelector('#clean').addEventListener('click',e=>{const clean=stage.classList.toggle('clean');e.currentTarget.textContent=clean?'Show overlays':'Hide overlays'});
@@ -152,19 +153,19 @@ if(pausedAt>=duration)pausedAt=0;
 speed=1;document.querySelector('#speed').value=1;document.querySelector('#speedText').textContent='1.0×';
 // Preserve the chosen composition, then lock it for the whole take.
 recording=true;controls.enableDamping=false;controls.update();controls.enabled=false;stage.classList.add('recording');resize();
-const stream=renderer.domElement.captureStream(30);
+const stream=renderer.domElement.captureStream(30);captureStream=stream;
 if(audioEnabled&&audioReady){captureAudio=Tone.getContext().rawContext.createMediaStreamDestination();Tone.getDestination().connect(captureAudio);for(const track of captureAudio.stream.getAudioTracks())stream.addTrack(track)}
-const type=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(x=>MediaRecorder.isTypeSupported(x));
-if(!type)throw Error('This browser cannot export WebM. Try Chrome or Edge.');
-recorder=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:12000000});const chunks=[];
+const output=createReferenceRecorder(stream);recorder=output.recorder;const chunks=[];
 recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
-recorder.onstop=()=>{playing=false;releaseAudioNotes();for(const track of stream.getTracks())track.stop();if(captureAudio){Tone.getDestination().disconnect(captureAudio);captureAudio=null}recording=false;controls.enabled=true;controls.enableDamping=true;stage.classList.remove('recording');resize();setCaptureControls(false);recordButton.textContent='● Record 1080p reference';recordButton.disabled=false;document.querySelector('#play').innerHTML='▶&nbsp; Play';if(chunks.length)download(new Blob(chunks,{type}),'keyframe-'+cameraSelect.value+'-1080p.webm');captureStatus.textContent='Clip saved · if Kling requires MP4, convert WebM to MP4 without changing timing.'};
+recorder.onstop=()=>{playing=false;releaseAudioNotes();for(const track of stream.getTracks())track.stop();if(captureAudio){Tone.getDestination().disconnect(captureAudio);captureAudio=null}recording=false;controls.enabled=true;controls.enableDamping=true;stage.classList.remove('recording');resize();setCaptureControls(false);updateRecordLabel();recordButton.disabled=false;document.querySelector('#play').innerHTML='▶&nbsp; Play';const type=recorder.mimeType||output.mimeType,extension=recordingExtension(type);if(chunks.length)download(new Blob(chunks,{type}),'keyframe-'+cameraSelect.value+'-1080p.'+extension);captureStream=null;captureStatus.textContent=extension==='mp4'?'MP4 saved · 1080p · ready for upload':'WebM saved · MP4 encoding is unavailable in this browser; convert to MP4 before upload if required.'};
 recorder.onerror=()=>{captureStatus.textContent='Recording failed; try a shorter clip.';if(recorder.state!=='inactive')recorder.stop()};
 lastAudioTime=pausedAt;recordEnd=Math.min(duration,pausedAt+Number(document.querySelector('#clipLength').value));
 const audioNow=Tone.now();if(audioEnabled&&audioReady)events.forEach((e,i)=>{if(e.start<=pausedAt&&e.end>pausedAt&&safeAttack(e.midi,audioNow,e.velocity/127))soundingAudio.add(i)});
-startAt=performance.now()-pausedAt*1000;playing=true;recorder.start(250);setCaptureControls(true);recordButton.disabled=false;recordButton.textContent='■ Stop recording';captureStatus.textContent='Recording clean 1920 × 1080 · 30 fps · camera locked';
-}catch(error){playing=false;recording=false;releaseAudioNotes();controls.enabled=true;controls.enableDamping=true;if(captureAudio){Tone.getDestination().disconnect(captureAudio);captureAudio=null}stage.classList.remove('recording');resize();setCaptureControls(false);recordButton.disabled=false;captureStatus.textContent=error.message}
+startAt=performance.now()-pausedAt*1000;playing=true;recorder.start(250);setCaptureControls(true);recordButton.disabled=false;recordButton.textContent='■ Stop recording';captureStatus.textContent='Recording '+output.extension.toUpperCase()+' · 1920 × 1080 · 30 fps · camera locked';
+}catch(error){playing=false;recording=false;releaseAudioNotes();if(captureStream){for(const track of captureStream.getTracks())track.stop();captureStream=null}updateRecordLabel();document.querySelector('#play').innerHTML='▶&nbsp; Play';controls.enabled=true;controls.enableDamping=true;if(captureAudio){Tone.getDestination().disconnect(captureAudio);captureAudio=null}stage.classList.remove('recording');resize();setCaptureControls(false);recordButton.disabled=false;captureStatus.textContent=error.message}
 });
+function updateRecordLabel(){const type=preferredRecordingType(audioEnabled);recordButton.textContent=type?'● Record '+recordingExtension(type).toUpperCase()+' · 1080p':'● Record 1080p reference'}
+updateRecordLabel();document.querySelector('#audioToggle').addEventListener('click',updateRecordLabel);
 function setCaptureControls(disabled){for(const id of ['camera','closeup','speed','file','play','reset','audioToggle','clipLength','snapshot'])document.getElementById(id).disabled=disabled}
 </script>
 </body>

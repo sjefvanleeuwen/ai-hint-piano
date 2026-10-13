@@ -12,7 +12,7 @@ Open https://sjefvanleeuwen.github.io/ai-hint-piano/, select a `.mid` or `.midi`
 2. Inspect the performance with **Overhead** or **Key detail** before recording. Drag to adjust any composition, or choose a preset again to reset it.
 3. Choose a 5–30 second take and press **Record 1080p reference**. Recording uses the current playback position, forces 1× speed, freezes camera movement, and captures only the scene at 1920 × 1080 and 30 fps, with audio if enabled. Stop early with the same button. Rendering/encoding performance depends on the device.
 4. Use **Save matching frame** for a clean 1920 × 1080 PNG at the current pose and angle. It can guide creation of a matching appearance image with the same composition.
-5. Browser recording exports WebM. If your Kling upload requires MP4, convert the file while preserving frame timing. Keep each reference clip a single shot; use the same framing in the appearance image.
+5. Browser recording prefers MP4 (H.264/AAC where supported). It checks native encoder capabilities and falls back to WebM if MP4 cannot be recorded. The button and capture status show the selected format, and downloaded files use the actual container extension. If WebM is saved and your Kling upload requires MP4, convert it while preserving frame timing. Keep each reference clip a single shot; use the same framing in the appearance image.
 
 **Hide overlays** is also available for external screen recording. The follow camera and cinematic orbit are intended for viewing; the fixed presets are preferable for transfer. Selecting a preset restores automatic motion after manual orbiting.
 
@@ -27,7 +27,7 @@ Open https://sjefvanleeuwen.github.io/ai-hint-piano/, select a `.mid` or `.midi`
 
 ## Validation
 
-Run `node --test tests/motion.test.mjs` for held-chord fingering, keyboard extremes, repeated notes, arm reach, tempo-map timing, running status and malformed MIDI handling. The app uses browser ESM and has no build step.
+Run `node --test tests/*.test.mjs` for held-chord fingering, keyboard extremes, repeated notes, arm reach, tempo-map timing, running status and malformed MIDI handling. The app uses browser ESM and has no build step.
 
 ## Audio attribution
 
