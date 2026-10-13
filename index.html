@@ -39,16 +39,16 @@ footer{margin-top:18px;color:#64777f;font:10px 'DM Mono';display:flex;justify-co
 <body>
 <header><div class="brand">KEYFRAME<span> / </span>PIANO STUDY</div><div class="tag">MOTION REFERENCE TOOL · 01</div></header>
 <main>
-<section class="intro"><div><p class="kicker">A performance, made legible</p><h1>See the music<br>move through the keys.</h1><p>Load a MIDI performance and study a seated pianist’s articulated hands, posture, and key contact from clear reference cameras. Built as a clear visual reference for motion and video models.</p></div><div class="badge">THREE-DIMENSIONAL MIDI PLAYBACK</div></section>
-<section class="stage"><div id="scene"></div><div class="hud"><div><div class="hud-label">CURRENT NOTE</div><div id="noteName">—</div></div><div class="hud-right"><div id="pieceName">DEMO · NIGHT WINDOW</div><div id="eventCount">88 KEYS · TWO HANDS</div><div id="audioStatus">PIANO AUDIO · LOADING</div></div></div><div class="progress-wrap"><span id="elapsed">00:00</span><div class="progress"><i id="bar"></i></div><span id="duration">00:00</span></div></section>
+<section class="intro"><div><p class="kicker">A performance, made legible</p><h1>See the music<br>move through the keys.</h1><p>Load a MIDI performance and study a textured human pianist’s articulated hands, posture, and key contact from clear reference cameras. Built as a clear visual reference for motion and video models.</p></div><div class="badge">THREE-DIMENSIONAL MIDI PLAYBACK</div></section>
+<section class="stage"><div id="scene"></div><div class="hud"><div><div class="hud-label">CURRENT NOTE</div><div id="noteName">—</div></div><div class="hud-right"><div id="pieceName">DEMO · NIGHT WINDOW</div><div id="eventCount">88 KEYS · TWO HANDS</div><div id="characterStatus">HARPER · LOADING CHARACTER</div><div id="audioStatus">PIANO AUDIO · LOADING</div></div></div><div class="progress-wrap"><span id="elapsed">00:00</span><div class="progress"><i id="bar"></i></div><span id="duration">00:00</span></div></section>
 <section class="controls">
 <div class="control"><label>Performance file</label><input id="file" type="file" accept=".mid,.midi,audio/midi"></div>
 <div class="control"><label>Camera shot</label><select id="camera"><option value="reference">Kling · steady three-quarter</option><option value="front">Kling · front / both hands</option><option value="profile">Kling · side / posture</option><option value="overhead">Overhead · fingering study</option><option value="closeup">Close-up · key contact</option><option value="hands">Close-up · gentle hand follow</option><option value="orbit">Cinematic · slow orbit</option></select></div>
 <div class="control"><label>Playback speed · <span id="speedText">1.0×</span></label><input id="speed" type="range" min=".5" max="1.5" value="1" step=".1"></div>
 <div class="buttons"><button class="btn secondary" id="closeup" title="Follow the playing hands and keys">◎ Key detail</button><button class="btn" id="play">▶&nbsp; Play</button><button class="btn secondary" id="audioToggle" aria-pressed="true">♫ Audio On</button><button class="btn secondary" id="reset" title="Reset playback">↺</button></div>
 </section>
-<section class="capture-controls"><label>Reference clip <select id="clipLength"><option value="5">5 seconds</option><option value="10" selected>10 seconds</option><option value="20">20 seconds</option><option value="30">30 seconds</option></select></label><button class="btn secondary" id="record">● Record 1080p reference</button><button class="btn secondary" id="clean">Hide overlays</button><button class="btn secondary" id="snapshot">Save matching frame</button><span id="captureStatus" role="status">Fixed camera · 1× speed · clean 16:9 frame</span></section><section class="info"><div class="tile"><strong>01 / KEY MOTION</strong>Keys sink on note-on and return on note-off, making each gesture readable.</div><div class="tile"><strong>02 / ARTICULATED PIANIST</strong>A seated mannequin connects shoulders, elbows, wrists, and three-segment fingers. Fingering is estimated from MIDI.</div><div class="tile"><strong>03 / CAMERA STUDY</strong>Use a steady three-quarter shot for transfer; separate front, side, overhead, and key-detail views for inspection.</div></section>
-<footer><span>PIANO SAMPLES: <a href="https://github.com/sfzinstruments/SalamanderGrandPiano" target="_blank" rel="noreferrer">SALAMANDER GRAND PIANO BY ALEXANDER HOLM</a> · <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">CC BY 3.0</a></span><span>MIDI FINGERING IS ESTIMATED · DRAG TO FRAME · RECORDING LOCKS CAMERA · MP4 PREFERRED · WEBM FALLBACK</span></footer>
+<section class="capture-controls"><label>Reference clip <select id="clipLength"><option value="5">5 seconds</option><option value="10" selected>10 seconds</option><option value="20">20 seconds</option><option value="30">30 seconds</option></select></label><button class="btn secondary" id="record">● Record 1080p reference</button><button class="btn secondary" id="clean">Hide overlays</button><button class="btn secondary" id="snapshot">Save matching frame</button><span id="captureStatus" role="status">Fixed camera · 1× speed · clean 16:9 frame</span></section><section class="info"><div class="tile"><strong>01 / KEY MOTION</strong>Keys sink on note-on and return on note-off, making each gesture readable.</div><div class="tile"><strong>02 / TEXTURED HUMAN PIANIST</strong>Harper’s textured face, clothing, and continuous skinned body move through a 56-joint rig. Fingering is estimated from MIDI.</div><div class="tile"><strong>03 / CAMERA STUDY</strong>Use a steady three-quarter shot for transfer; separate front, side, overhead, and key-detail views for inspection.</div></section>
+<footer><span>PIANO SAMPLES: <a href="https://github.com/sfzinstruments/SalamanderGrandPiano" target="_blank" rel="noreferrer">SALAMANDER GRAND PIANO BY ALEXANDER HOLM</a> · <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noreferrer">CC BY 3.0</a></span><span>HARPER: INNERSCENE / MAKEHUMAN · CC0 · MIDI FINGERING IS ESTIMATED · DRAG TO FRAME · RECORDING LOCKS CAMERA · MP4 PREFERRED · WEBM FALLBACK</span></footer>
 </main>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/","tone":"https://cdn.jsdelivr.net/npm/tone@15.1.22/+esm"}}</script>
 <script type="module">
@@ -61,15 +61,16 @@ import {planFingering} from './motion.mjs';
 import {createPianist} from './pianist.mjs';
 const mount=document.querySelector('#scene');
 const scene=new THREE.Scene(); scene.background=new THREE.Color('#738692'); scene.fog=new THREE.Fog('#738692',35,90);
-const camera=new THREE.PerspectiveCamera(38,1,.1,100); camera.position.set(1.5,8.8,13.8);
+const camera=new THREE.PerspectiveCamera(38,1,.1,100); camera.position.set(10,7.8,-14);
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.25;
 mount.appendChild(renderer.domElement);
 const controls=new OrbitControls(camera,renderer.domElement); controls.target.set(0,0,0);controls.enableDamping=true;controls.dampingFactor=.055;controls.minDistance=3;controls.maxDistance=35;controls.maxPolarAngle=Math.PI*.48;
 scene.add(new THREE.HemisphereLight(0xc9f3ff,0x182129,2.1));
-const keyLight=new THREE.DirectionalLight(0xfff4dd,3.2);keyLight.position.set(-4,10,7);keyLight.castShadow=true;keyLight.shadow.mapSize.set(2048,2048);scene.add(keyLight);
-const rim=new THREE.PointLight(0x79e7d1,48,24);rim.position.set(6,5,-5);scene.add(rim);
+const fill=new THREE.DirectionalLight(0xffffff,1.5);fill.position.set(2,5,-10);scene.add(fill);
+const keyLight=new THREE.DirectionalLight(0xfff4dd,3.2);keyLight.position.set(-4,10,7);keyLight.castShadow=true;keyLight.shadow.mapSize.set(2048,2048);keyLight.shadow.camera.left=-10;keyLight.shadow.camera.right=10;keyLight.shadow.camera.top=10;keyLight.shadow.camera.bottom=-10;keyLight.shadow.bias=-.0003;scene.add(keyLight);
+const rim=new THREE.PointLight(0xc4d8ed,24,24);rim.position.set(6,5,-5);scene.add(rim);
 const mat=(color,roughness=.55,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
-const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),mat('#6b7d86',.9));floor.rotation.x=-Math.PI/2;floor.position.y=-5.95;floor.receiveShadow=true;scene.add(floor);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(200,200),mat('#6b7d86',.9));floor.rotation.x=-Math.PI/2;floor.position.y=-6.85;floor.receiveShadow=true;scene.add(floor);
 const piano=new THREE.Group();scene.add(piano);
 const box=(parent,w,h,d,material,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m};
 box(piano,13.15,.46,2.25,mat('#17232b',.32,.35),0,-.45,.08);
@@ -84,10 +85,10 @@ const blackKeys=[];
 for(let n=0;n<whiteMidi.length-1;n++){const lower=whiteMidi[n],upper=whiteMidi[n+1];if(upper-lower!==2)continue;const midi=lower+1,x=-6.45+kw*(n+1),b=box(keyGroup,kw*.58,.22,.93,blackMat,x,kY+.105,-.18);b.userData={midi,white:false,baseY:kY+.105,vel:0};blackKeys.push(b);keys.push(b);keyXByMidi.set(midi,x)}
 const back=box(piano,13.2,.12,.2,mat('#32474d',.3,.2),0,-.2,-1.12);back.position.y=-.2;
 const wood=mat('#233441',.58),benchMat=mat('#304454',.8);
-for(const x of [-5.5,5.5])box(piano,.30,5.3,1.05,wood,x,-3.15,-.1);
+for(const x of [-5.5,5.5])box(piano,.30,6.3,1.05,wood,x,-3.65,-.1);
 box(piano,13.15,.58,.18,wood,0,.03,-.91);
 const bench=new THREE.Group();scene.add(bench);box(bench,3.45,.32,1.58,benchMat,0,-2.55,3.70);
-for(const x of [-1.30,1.30])for(const z of [3.15,4.25])box(bench,.17,3.15,.17,wood,x,-4.26,z);
+for(const x of [-1.30,1.30])for(const z of [3.15,4.25])box(bench,.17,4.15,.17,wood,x,-4.76,z);
 const keyByMidi=new Map(keys.map(k=>[k.userData.midi,k]));
 const pianist=createPianist(scene,keyXByMidi,keyByMidi);
 let fingering={plans:[[],[]],overflow:0};
@@ -120,7 +121,7 @@ document.querySelector('#reset').addEventListener('click',()=>{playing=false;pau
 const cameraSelect=document.querySelector('#camera'),closeupButton=document.querySelector('#closeup');
 let manualCamera=false,recording=false;
 controls.addEventListener('start',()=>{manualCamera=true});
-const cameraShots={reference:{pos:[10,7.0,-12.5],target:[0,.5,1.9],fov:38},front:{pos:[0,6,-15],target:[0,.5,2],fov:39},profile:{pos:[-14,5,1],target:[0,.2,1.8],fov:42},overhead:{pos:[0,15,.15],target:[0,0,.3],fov:44},closeup:{pos:[4.0,3.6,-6.5],target:[0,.25,.3],fov:38},hands:{pos:[4.0,4.0,-8.0],target:[0,.3,.5],fov:39},orbit:{pos:[10,7,-12.5],target:[0,.5,1.9],fov:38}};
+const cameraShots={reference:{pos:[10,7.8,-14],target:[0,.9,1.9],fov:38},front:{pos:[0,6.8,-16],target:[0,.9,2],fov:39},profile:{pos:[-15,6,1],target:[0,.7,1.8],fov:42},overhead:{pos:[0,15,.15],target:[0,0,.3],fov:44},closeup:{pos:[4.0,3.6,-6.5],target:[0,.25,.3],fov:38},hands:{pos:[4.0,4.0,-8.0],target:[0,.3,.5],fov:39},orbit:{pos:[10,7,-12.5],target:[0,.5,1.9],fov:38}};
 function setCameraMode(mode){const shot=cameraShots[mode]||cameraShots.reference;cameraSelect.value=mode;manualCamera=false;closeupButton.classList.toggle('active',mode==='closeup');camera.fov=shot.fov;camera.position.set(...shot.pos);controls.target.set(...shot.target);camera.updateProjectionMatrix();controls.update()}
 cameraSelect.addEventListener('change',()=>setCameraMode(cameraSelect.value));
 closeupButton.addEventListener('click',()=>setCameraMode(cameraSelect.value==='closeup'?'reference':'closeup'));
@@ -129,7 +130,7 @@ function resize(){const r=mount.getBoundingClientRect();renderer.setPixelRatio(r
 function animate(now){requestAnimationFrame(animate);const dt=Math.min(.05,(now-lastNow)/1000||0);lastNow=now;camT+=dt;if(playing){pausedAt=(now-startAt)/1000*speed;if(pausedAt>=duration){pausedAt=duration;playing=false;releaseAudioNotes();lastAudioTime=duration;document.querySelector('#play').innerHTML='▶&nbsp; Play'}}
 const t=pausedAt;if(playing&&audioReady&&audioEnabled){const now=Tone.now();for(let i=0;i<events.length;i++){const e=events[i];if(e.start>lastAudioTime&&e.start<=t&&safeAttack(e.midi,now,Math.max(0,Math.min(1,(e.velocity||80)/127))))soundingAudio.add(i);if(e.end>lastAudioTime&&e.end<=t){const samePitchStillHeld=events.some((other,j)=>j!==i&&soundingAudio.has(j)&&other.midi===e.midi&&other.end>t);if(!samePitchStillHeld)safeRelease(e.midi,now);soundingAudio.delete(i)}}lastAudioTime=t}else if(playing){lastAudioTime=t}let active=events.filter(e=>t>=e.start&&t<e.end),note=active[active.length-1];document.querySelector('#noteName').textContent=note?noteLabel(note.midi):'—';document.querySelector('#elapsed').textContent=fmt(t);document.querySelector('#bar').style.width=(t/duration*100)+'%';
 for(const k of keys){const ev=active.find(e=>e.midi===k.userData.midi);const target=ev?-.12*(.45+ev.velocity/127):0;k.position.y=k.userData.baseY+target;k.material=ev?pressedMat:(k.userData.white?whiteMat:blackMat)}
-const handStates=pianist.update(t,fingering.plans);
+const handStates=pianist.update(t,fingering.plans);if(characterReady)document.querySelector('#characterStatus').textContent=handStates.some(h=>h.reachLimited)?'HARPER · PASSAGE EXCEEDS HAND REACH':'HARPER · 56-JOINT HUMAN RIG';
 const mode=cameraSelect.value;
 if(!manualCamera&&!recording){
 if(mode==='orbit'){const shot=cameraShots.orbit;camera.position.set(Math.sin(camT*.06)*14,7, -Math.cos(camT*.06)*14);controls.target.set(...shot.target)}
@@ -138,6 +139,7 @@ if(mode==='hands'){const wanted=(handStates[0].x+handStates[1].x)/2;closeFocusX+
 controls.update();renderer.render(scene,camera);if(recording&&recorder?.state==='recording'&&(t>=recordEnd||!playing))recorder.stop()}requestAnimationFrame(animate);
 
 let recorder=null,recordEnd=0,captureAudio=null,captureStream=null;
+let characterReady=false;
 const recordButton=document.querySelector('#record'),captureStatus=document.querySelector('#captureStatus'),stage=document.querySelector('.stage');
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000)}
 document.querySelector('#clean').addEventListener('click',e=>{const clean=stage.classList.toggle('clean');e.currentTarget.textContent=clean?'Show overlays':'Hide overlays'});
@@ -147,7 +149,7 @@ if(recording){recorder?.stop();return}
 if(!globalThis.MediaRecorder||!renderer.domElement.captureStream){captureStatus.textContent='Recording is unavailable in this browser. Use screen recording with overlays hidden.';return}
 recordButton.disabled=true;
 try{
-await Tone.start();if(audioEnabled)await Tone.loaded();
+await pianist.ready;await Tone.start();if(audioEnabled)await Tone.loaded();
 releaseAudioNotes();playing=false;
 if(pausedAt>=duration)pausedAt=0;
 speed=1;document.querySelector('#speed').value=1;document.querySelector('#speedText').textContent='1.0×';
@@ -165,8 +167,10 @@ startAt=performance.now()-pausedAt*1000;playing=true;recorder.start(250);setCapt
 }catch(error){playing=false;recording=false;releaseAudioNotes();if(captureStream){for(const track of captureStream.getTracks())track.stop();captureStream=null}updateRecordLabel();document.querySelector('#play').innerHTML='▶&nbsp; Play';controls.enabled=true;controls.enableDamping=true;if(captureAudio){Tone.getDestination().disconnect(captureAudio);captureAudio=null}stage.classList.remove('recording');resize();setCaptureControls(false);recordButton.disabled=false;captureStatus.textContent=error.message}
 });
 function updateRecordLabel(){const type=preferredRecordingType(audioEnabled);recordButton.textContent=type?'● Record '+recordingExtension(type).toUpperCase()+' · 1080p':'● Record 1080p reference'}
-updateRecordLabel();document.querySelector('#audioToggle').addEventListener('click',updateRecordLabel);
-function setCaptureControls(disabled){for(const id of ['camera','closeup','speed','file','play','reset','audioToggle','clipLength','snapshot'])document.getElementById(id).disabled=disabled}
+updateRecordLabel();recordButton.disabled=true;document.querySelector('#play').disabled=true;document.querySelector('#snapshot').disabled=true;
+pianist.ready.then(()=>{characterReady=true;recordButton.disabled=false;document.querySelector('#play').disabled=false;document.querySelector('#snapshot').disabled=false;document.querySelector('#characterStatus').textContent='HARPER · 56-JOINT HUMAN RIG';captureStatus.textContent='Harper ready · steady three-quarter shot recommended';pianist.update(pausedAt,fingering.plans)}).catch(error=>{document.querySelector('#characterStatus').textContent='CHARACTER LOAD FAILED';captureStatus.textContent='Could not load Harper. Reload to retry. '+error.message;console.error(error)});
+document.querySelector('#audioToggle').addEventListener('click',updateRecordLabel);
+function setCaptureControls(disabled){for(const id of ['camera','closeup','speed','file','play','reset','audioToggle','clipLength','snapshot'])document.getElementById(id).disabled=disabled||(['play','snapshot'].includes(id)&&!characterReady)}
 </script>
 </body>
 </html>

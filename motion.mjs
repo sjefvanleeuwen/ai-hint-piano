@@ -2,10 +2,33 @@
 export const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const smooth=x=>{x=clamp(x,0,1);return x*x*(3-2*x)};
 function combinations(n,k,start=0,prefix=[],out=[]){if(!k){out.push(prefix);return out}for(let i=start;i<=n-k;i++)combinations(n,k-1,i+1,[...prefix,i],out);return out}
+export function assignHands(events,keyX){
+ const sorted=events.map(e=>({...e})).sort((a,b)=>a.start-b.start);let held=[];
+ for(let at=0;at<sorted.length;){
+  const onset=sorted[at].start,group=[];held=held.filter(e=>e.end>onset);
+  while(at<sorted.length&&sorted[at].start<onset+.025)group.push(sorted[at++]);
+  const ahead=sorted.slice(at).filter(e=>e.start<onset+.6);
+  const candidates=[...new Set([...group,...ahead,...held].map(e=>e.midi))].sort((a,b)=>a-b);
+  let best={cost:Infinity,cut:60};
+  for(let i=0;i<=candidates.length;i++){
+   const cut=i===0?candidates[0]:i===candidates.length?candidates.at(-1)+1:(candidates[i-1]+candidates[i])/2;
+   let cost=(cut-60)**2*.001;
+   for(let h=0;h<2;h++){
+    const pitches=[...new Set([...held.filter(e=>e.hand===h),...[...group,...ahead].filter(e=>(e.hand??(e.midi<cut?0:1))===h)].map(e=>e.midi))].sort((a,b)=>a-b);
+    const span=pitches.length?keyX.get(pitches.at(-1))-keyX.get(pitches[0]):0;
+    cost+=span*span+Math.max(0,span-1.9)**2*80+Math.max(0,pitches.length-5)*1000;
+   }
+   if(cost<best.cost)best={cost,cut};
+  }
+  for(const e of group){if(e.hand==null){const same=held.find(p=>p.midi===e.midi);e.hand=same?same.hand:e.midi<best.cut?0:1}held.push(e)}
+ }
+ return sorted;
+}
 export function planFingering(events,keyX){
+  events=assignHands(events,keyX);
   const plans=[[],[]];let overflow=0;
   for(let h=0;h<2;h++){
-    const notes=events.map((e,index)=>({...e,index})).filter(e=>(e.midi<66?0:1)===h).sort((a,b)=>a.start-b.start);
+    const notes=events.map((e,index)=>({...e,index})).filter(e=>(e.hand??(e.midi<60?0:1))===h).sort((a,b)=>a.start-b.start);
     const previous=Array(5).fill(null);
     for(let at=0;at<notes.length;){
       const onset=notes[at].start,group=[];
