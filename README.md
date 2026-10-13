@@ -4,7 +4,7 @@ A browser-based Three.js MIDI piano performance reference, with Harper, a textur
 
 ## Play
 
-Open https://sjefvanleeuwen.github.io/ai-hint-piano/, select a `.mid` or `.midi` file and press **Play**. The original demo works immediately. Audio uses the Salamander sampled piano; the first audible play loads the samples. Files are parsed locally and never uploaded.
+Open https://sjefvanleeuwen.github.io/ai-hint-piano/ and press **Play**. The user-provided **Kasso — Kasso (Ben Liebrand Radio Edit), piano MIDI** is the default performance and loads automatically. It contains 2,587 piano notes and runs for about 3:09. Choose another `.mid` or `.midi` file to replace it for the current session. Audio uses the Salamander sampled piano; the first audible play loads the samples. Imported files are parsed locally and never uploaded. The default MIDI is bundled as `assets/kasso-piano.mid`; playback starts only after pressing Play.
 
 ## Prepare a Kling reference
 
